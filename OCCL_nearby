@@ -1,0 +1,44 @@
+from bs4 import BeautifulSoup
+import time
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+import pandas as pd
+
+# Driver setup and options
+options = Options()
+options.add_argument('--headless')
+driver_path = "/home/samwhiteman/chromedriver"
+driver = webdriver.Chrome(driver_path,chrome_options=options)
+
+# Source setup
+source_url = 'https://davnit.net/esmap/list'
+driver.get(source_url);
+
+# give it some time to load up the client side table
+time.sleep(3)
+
+# retrieve page html code and convery to a bs4 object
+html = driver.page_source
+soup = BeautifulSoup(html,'lxml') # lxml is the specified parser
+
+# scrape the table and export as a pandas df
+table1 = soup.find('table', {'class': 'google-visualization-table-table'})
+table2 = pd.read_html(str(table1), header=0)
+df = table2[0]
+
+# get any events close to my apartment
+close_events = []
+for event in df.values:
+    loc = event[2]
+    if "GRANDE LAKES BLVD" in str(loc):
+        close_events.append(event)
+    elif "JOHN YOUNG BLVD" in str(loc): # TODO: This is a long road. We need some street numbers
+        close_events.append(event)
+
+if len(close_events) == 0:
+    print("No close events.")
+else:
+    print(close_events)
+
+# close the driver
+driver.quit()
